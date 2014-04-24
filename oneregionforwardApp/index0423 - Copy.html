@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0" />
+    <!--Use protocol relative urls that way if the browser is viewing the page via HTTPS the js/css file will be requested using the HTTPS protocol-->
+    <link rel="stylesheet" href="//js.arcgis.com/3.9/js/dojo/dijit/themes/claro/claro.css">
+    <link rel="stylesheet" type="text/css" href="//js.arcgis.com/3.9/js/esri/css/esri.css">
+    <!--Load any application specific styles-->
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <!--[if gte IE 9]>
+      <style type="text/css">
+        .gradient {
+           filter: none;
+        }
+      </style>
+    <![endif]-->
+	
+	<style>
+		@import "http://ajax.googleapis.com/ajax/libs/dojo/1.6/dojox/layout/resources/FloatingPane.css";
+        @import "http://ajax.googleapis.com/ajax/libs/dojo/1.6/dojox/layout/resources/ResizeHandle.css";
+	</style>
+	
+	<script type="text/javascript">
+	
+	
+        var package_path = location.pathname.replace(/\/[^/]+$/, '');
+        var dojoConfig = {
+            parseOnLoad:true,
+            // The locationPath logic below may look confusing but all its doing is 
+            // enabling us to load the api from a CDN and load local modules from the correct location.
+            packages: [{
+                name: "application",
+                location: package_path + '/js'
+            }, {
+                name: "config",
+                location: package_path + '/config'
+            },{
+                name: "templateConfig",
+                location: package_path
+            }]
+        };
+    </script>
+    
+	<script type="text/javascript" src="//js.arcgis.com/3.9/"></script>
+	
+	
+	
+	
+	<!--<script type="text/javascript" src="toc.js"></script>-->
+    <script type="text/javascript">
+        require([
+            "dojo/on",
+            "dojo/ready",
+            //"application/main",
+            //"application/template",
+            "dijit/layout/LayoutContainer",
+            "dijit/layout/ContentPane",
+            //"dojo/domReady!",
+			
+			//yy 0416
+			//read configuration
+			
+			"dojo/Evented",
+			"dojo/_base/declare",
+			"dojo/_base/kernel",
+			"dojo/_base/array",
+			"dojo/_base/lang",
+			"dojo/dom-class",
+			"dojo/Deferred",
+			"dojo/promise/all",
+			"esri/arcgis/utils",
+			"esri/urlUtils",
+			"esri/request",
+			"esri/config",
+			"esri/lang",
+			"esri/IdentityManager",
+			"esri/tasks/GeometryService",
+			"config/defaults",
+			"templateConfig/commonConfig",
+			
+			//scale bar
+			"esri/dijit/Scalebar",
+			
+			//ADM construct
+			"dojo/dom-construct",
+			
+			//geocoder
+			"esri/dijit/Geocoder",
+			
+			"dijit/Toolbar",
+			"dojo/dom-attr",
+			"dijit/form/Button",
+			"dijit/form/DropDownButton",
+			"dijit/DropDownMenu", 
+			"dijit/MenuItem",
+			"esri/dijit/BasemapGallery",
+			"esri/dijit/Bookmarks",
+			"esri/map",
+			"dojox/layout/FloatingPane",
+			"dojo/dom",
+			"dijit/form/HorizontalSlider",
+			"dijit/registry",
+			"esri/dijit/Legend",
+			"dojo/query",
+			"dijit/Dialog",
+			
+			//yy 0417
+			//draw
+			"esri/toolbars/draw",
+			"esri/graphic",
+
+			"esri/symbols/SimpleMarkerSymbol",
+			"esri/symbols/SimpleLineSymbol",
+			"esri/symbols/SimpleFillSymbol",
+			"esri/Color",
+			
+			//yy 0423
+			//findtask
+			"dojox/grid/DataGrid",
+			"dojo/data/ItemFileReadStore",
+			"esri/tasks/FindTask",
+			"esri/tasks/FindParameters",
+			"dijit/layout/BorderContainer",
+			
+			//yy 0423
+			"esri/dijit/LayerSwipe",
+			
+			//yy 0414
+			//print
+			"esri/dijit/Print",
+			"esri/tasks/PrintTask",
+			"esri/tasks/PrintParameters",
+			"esri/tasks/PrintTemplate"
+			
+        ], function(
+            on,
+            ready,
+            //Main,
+            //Template
+			LayoutContainer,
+			ContentPane,
+			
+			
+			Evented,
+			declare,
+			kernel,
+			array,
+			lang,
+			domClass,
+			Deferred,
+			all,
+			arcgisUtils,
+			urlUtils,
+			esriRequest,
+			esriConfig,
+			esriLang,
+			IdentityManager,
+			GeometryService,
+			defaults,
+			commonConfig,
+			Scalebar,
+			domConstruct,
+			GeoCoder,
+			
+			Toolbar,
+			domAttr,
+			Button,
+			DropDownButton,
+			DropDownMenu,
+			MenuItem,
+			BasemapGallery,
+			Bookmarks,
+			map,
+			FloatingPane,
+			
+			dom,
+			HorizontalSlider,
+			registry,
+			Legend,
+			query,
+			Dialog,
+			
+			Draw, 
+			Graphic,
+			SimpleMarkerSymbol, 
+			SimpleLineSymbol, 
+			SimpleFillSymbol,
+			Color,
+			
+			DataGrid,
+			ItemFileReadStore,
+			FindTask,
+			FindParameters,
+			BorderContainer,
+			
+			LayerSwipe,
+			
+			Print,
+			PrintTask,
+			PrintParameters,
+			PrintTemplate
+        ){
+            //config: {},
+			var config;
+			var map;
+			var tocHTML;
+			var legendContent;
+			var layers;
+			var myDialog;
+			
+			var drawtoolbar, symbol, geomTask;
+			
+			var findTask, findParams;
+			
+			//var printUrl = "http://sampleserver6.arcgisonline.com/arcgis/rest/services/Utilities/PrintingTools/GPServer/Export%20Web%20Map%20Task";
+			var printUrl = "http://localhost/arcgis/rest/services/Utilities/PrintingTools/GPServer/Export%20Web%20Map%20Task";
+			var proxyUrl = "/proxy/proxy.ashx";
+
+            ready(function(){
+
+                //create the template. This will take care of all the logic required for template applications 
+                //If you need localization set the supportsLocalization value to true to get the localized strings 
+                //from the javascript/nls/resource files. 
+                //Note that we've included a placeholder nls folder and a resource file with one error string
+                //to show how to setup the strings file.
+                
+				esriConfig.defaults.io.proxyUrl = proxyUrl;
+				
+                //yy 0416
+				//create map
+				config=declare.safeMixin(defaults, commonConfig);
+				console.log(config);
+				
+				var deferred=arcgisUtils.createMap(config.webmap,"mapDiv",{
+					mapOptions: {
+						slider: true
+					},
+					bingMapsKey: config.bingMapsKey,
+					geometryServiceURL: "http://sampleserver3.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer"
+				});
+				deferred.then(function(response){
+					map=response.map;
+					//yy 0424 configure legend panel
+					if(config.legend)
+					{
+						CreateLegend(response);
+					}
+					_CreateDrawToolbar(map);
+					layers = response.itemInfo.itemData.operationalLayers;
+					_CreateMapComponent();
+					
+					
+				});
+				
+				
+
+
+			});
+			
+			function _CreateMapComponent()
+			{
+				console.log(map);
+				
+				//scale bar
+				var scalebar = new Scalebar({
+					map: map,
+					attachTo: "bottom-left"
+				});
+				if(config.displayLogo)
+				{
+					CreateLogo(config.logoPath);
+				}
+				if(config.geocoder)
+				{
+					CreateGeoCoder();
+				}
+				CreateToolBar();
+				
+				demo.endLoading();
+			}
+			
+			function CreateLogo(logoPath){
+			//yy 0413 create logo
+			
+			//<a id="logo" href="http://www.oneregionforward.org">
+				//<img class="logoImg" alt="One Region Forward" src="image/logo.svg"></img>
+			//</a>
+			
+			var content;
+			content="<a id='logo' href='http://www.oneregionforward.org'>"
+			content+="<img ";
+			content+="alt='logo image' src='"+logoPath+"' style='width:100px;height:50px'></img>";
+			content+="</a>";
+			var n = domConstruct.create("div", {id:"logoDiv", innerHTML: content },"mapDiv");
+			
+		}
+
+			function CreateGeoCoder()
+			{
+				var geocoder = new GeoCoder({ 
+					map: map,
+					autoComplete: true,
+					maxLocations: 10,
+
+				}, "geocoderDiv");
+				geocoder.startup();
+
+			}
+        
+			function CreateToolBar()
+			{
+				//var width=domAttr.get("toolbar", "width");
+				if(config.displayLayerListTool)
+				{
+					CreateLayerListBtn();
+				}
+				if(config.displayBasemapTool)
+				{
+					CreateBaseMapBtn();
+				}
+				if(config.displayBookmarkTool)
+				{
+					CreateBookmarkBtn();
+				}
+				if(config.displayPrintTool)
+				{
+					CreatePrintBtn();
+				}
+				if(config.displayDrawTool)
+				{
+					CreateDrawBtn();
+				}
+				
+				
+				//_addContentPane("legendPane","right",legendContent,"panel_content");
+				
+				//width+=100;
+				//domAttr.set("toolbar","width",width);
+			}
+			
+			function CreateLegend(response){
+				legendContent = "<div id='legendDiv'></div>";
+
+				_addContentPane("legendPane","right",legendContent,"panel_content");
+	 
+				var legend = new Legend({
+					map: map,
+					layerInfos: (arcgisUtils.getLegendLayers(response))
+				},"legendDiv");
+				legend.startup();
+			}
+			
+			function _addContentPane(widgetId, region, content, customClass){
+	  
+				//add content pane to the border container 
+				var bc = registry.byId("mainWindow");
+				var cp = new ContentPane({
+						id: widgetId,
+						className: widgetId,
+						region: region,
+						content: content
+				},domConstruct.create("div"));
+			   
+				if(customClass){
+					domClass.add(cp.domNode, customClass);
+				}
+
+				bc.addChild(cp);
+				
+				return cp;
+
+			}
+			
+			function CreateLayerListBtn()
+			{
+				var n = domConstruct.create("div", {id:"LayerListBtn"},"toolbar");
+				
+				//var cp = new ContentPane({
+				//	id: 'layerListPane',
+				//	style:"background-color:#ffffff;width:100px;height:100px;"
+				//});
+
+				//var cp = dom.byId("layerlistPane");
+				
+				var pFloatingPane = new FloatingPane({
+					title: "Layer List",
+					resizable: true,
+					dockable: true,
+					style: "position:absolute;top:300px;left:50px;width:200px;height:300px;visibility:hidden;z-index:1000;",
+					id: "layerListFloatingPane"
+				},"layerListFloatingPane");
+				//dojo.byId("pFloatingPane"));*/
+			
+				pFloatingPane.startup();    
+				
+				domAttr.set("layerListFloatingPane","visibility","hidden");
+				
+				var myButton = new Button({
+					label: "layer list",
+					id: "layerlistButton",
+					iconClass: "layerIcon",
+					showLabel:false,
+					title: "layerlist title",
+					onClick: function(){
+						//pFloatingPane.show();
+						//}
+						
+						var isvisible=domAttr.get("layerListFloatingPane","visibility");
+						if(isvisible=="hidden"){
+							domAttr.set("layerListFloatingPane","visibility","visible"); 
+							//domAttr.set("layerListFloatingPane","display","none"); 
+							//domAttr.set("layerListFloatingPane","opacity","100"); 
+							domAttr.set("layerListFloatingPane","style","position: absolute; top: 110px; left: 100px; width: 236px; height: 318px; visibility: visible; z-index: 1000; opacity: 100; display: block;");
+						}
+						else{
+							domAttr.set('layerListFloatingPane','visibility','hidden');
+							//domAttr.set("layerListFloatingPane","display","block"); 
+							//domAttr.set("layerListFloatingPane","opacity","0");
+							domAttr.set("layerListFloatingPane","style","position: absolute; top: 110px; left: 100px; width: 236px; height: 318px; visibility: hidden; z-index: 1000; opacity: 0; display: none;")							
+						}
+						
+						
+						}
+						
+					//dropDown:layerlistFloatingPane
+				}, n);
+				
+				//yy 0416 add layer list
+				layers.forEach(function(element, index, array){
+					//console.log(this);
+					addToTOC(map.getLayer(element.id));
+				});
+				
+				
+				var zoomBtn=new Button({
+					label: "Zoom to layer",
+					id: "zoomBtn",
+					//iconClass: "layerIcon",
+					showLabel:true,
+					title: "Zoom to layer",
+					onClick:function(){
+						zoomToLayer(dom.byId("transparencyLayerSelect").value);
+					}
+				},"zoomBtn");
+				
+				var slider = new HorizontalSlider({
+					name: "slider",
+					value: 100,
+					minimum: 0,
+					maximum: 100,
+					intermediateChanges: true,
+					showButtons:"true",
+					intermediateChanges:"true",
+					slideDuration:"500",
+					style:"width:200px; height: 20px;",
+					onChange: function(value){
+						changeTransparency(value/100);
+					}
+				}, "slider");
+				//onChange="updateTransparencyLayer(this.value)"
+				on(dom.byId("transparencyLayerSelect"),"change",function(){
+					updateTransparencyLayer(this.value);
+				});
+				
+				on(dom.byId("transparencyLayerSelect"),"change",function(){
+					updateTransparencyLayer(this.value);
+				});
+				
+				//onClick='zoomToLayer(dom.byId("transparencyList").value);'
+				//on("zoomBtn","click",function(){
+				//	zoomToLayer(dom.byId("transparencyList").value);
+				//});
+				
+				//domAttr.set(cp,"innerHTML","aweraer");
+				
+				//var toc=domConstruct.create("div",{id:"toc",innerHTML:"qweqwe"},"layerListPane");
+				
+				//toc.innerHTML="asdasd";
+				
+				//cp.set("content",toc.domNode);
+				
+					
+				
+				
+				
+				
+				//toc = dom.byId('toc');
+				//console.log(toc.innerHTML);
+				
+				
+				//yy 0413
+				//add to layer list
+				//this.getLayerProperties();
+				
+				//dom.byId("toc").innerHTML = tocHTML;
+				//on(myButton, "click",function(){
+					//this.addToTOC(this.map.getLayer(this.map.layerIds[0]),false);
+				//});
+				
+				
+				
+				
+			}
+			
+			//yy 0413
+			//basemapbtn
+			function CreateBaseMapBtn()
+			{
+				var n = domConstruct.create("div", {id:"basemapBtn"},"toolbar");
+				
+				
+				var cp=new ContentPane({
+					id:"basemapGallery",
+					style:"max-height:448px;width:380px;background-color:#ffffff"
+				});
+				
+				var basemapGallery = new BasemapGallery({
+					showArcGISBasemaps:true,
+					map:map
+				},domConstruct.create('div'));
+				
+				cp.set('content', basemapGallery.domNode);
+				
+				var button = new dijit.form.DropDownButton({
+					label: "Basemap Gallery",
+					iconClass:'basemapIcon',
+					showLabel:false,
+					//title: i18n.tools.basemap.title,
+					dropDown: cp
+				},n);
+				
+				//addbookmark widget
+				//contentpane
+				//basemapgallery
+				//
+				/*
+				var cp = new dijit.layout.ContentPane({
+					id: 'basemapGallery',
+					style: "max-height:448px;width:380px;"
+				});
+				
+				var basemapGallery = new BasemapGallery({
+					showArcGISBasemaps:true,
+					map:map
+				},dojo.create('div'));
+
+				//if a bing maps key is provided - display bing maps too.
+				var basemapGallery = new esri.dijit.BasemapGallery({
+					showArcGISBasemaps: true,
+					portalUrl: configOptions.sharingurl,
+					basemapsGroup: getBasemapGroup(),
+					bingMapsKey: configOptions.bingmapskey,
+					map: map
+				}, dojo.create('div'));
+
+
+				cp.set('content', basemapGallery.domNode);
+
+
+				var button = new dijit.form.DropDownButton({
+					label: i18n.tools.basemap.label,
+					id: "basemapBtn",
+					iconClass: "esriBasemapIcon",
+					title: i18n.tools.basemap.title,
+					dropDown: cp
+				});
+
+				dojo.byId('webmap-toolbar-center').appendChild(button.domNode);
+
+				dojo.connect(basemapGallery, "onSelectionChange", function () {
+					//close the basemap window when an item is selected
+					//destroy and recreate the overview map  - so the basemap layer is modified.
+					destroyOverview();
+					dijit.byId('basemapBtn').closeDropDown();
+				});
+
+				basemapGallery.startup();
+				
+				*/
+			}
+			
+			//yy 0413
+			//bookmark
+			function CreateBookmarkBtn()
+			{
+				var n = domConstruct.create("div", {id:"bookmarkBtn"},"toolbar");
+				
+				var bookmarks=new Bookmarks({
+					map:map,
+					bookmarks: [],
+					editable: true
+				},domConstruct.create('div'));
+				
+				var cp = new ContentPane({
+					id: 'bookmarkView',
+					style:"background-color:#ffffff"
+				});
+				
+				on(bookmarks, "onClick", function () {
+					//close the bookmark window when an item is clicked
+					dom.byId('bookmarkButton').closeDropDown();
+				});
+
+				cp.set('content', bookmarks.bookmarkDomNode);
+				var button = new DropDownButton({
+					label: "Bookmarks",
+					id: "bookmarkButton",
+					iconClass: "bookmarkIcon",
+					showLabel:false,
+					title: "Bookmarks title",
+					dropDown: cp
+				},n);
+				
+				/*
+				//does the web map have any bookmarks
+					if (info.itemInfo.itemData.bookmarks) {
+						var bookmarks = new esri.dijit.Bookmarks({
+							map: map,
+							bookmarks: info.itemInfo.itemData.bookmarks
+						}, dojo.create("div"));
+
+
+						dojo.connect(bookmarks, "onClick", function () {
+							//close the bookmark window when an item is clicked
+							dijit.byId('bookmarkButton').closeDropDown();
+						});
+
+
+						var cp = new dijit.layout.ContentPane({
+							id: 'bookmarkView'
+						});
+						cp.set('content', bookmarks.bookmarkDomNode);
+						var button = new dijit.form.DropDownButton({
+							label: i18n.tools.bookmark.label,
+							id: "bookmarkButton",
+							iconClass: "esriBookmarkIcon",
+							title: i18n.tools.bookmark.title,
+							dropDown: cp
+						});
+
+						dojo.byId('webmap-toolbar-center').appendChild(button.domNode);
+					}
+				*/
+			}
+			
+			//yy 0413
+			//print list
+			
+			/*
+			MAP_ONLY
+			A3 Landscape
+			A3 Portrait
+			A4 Landscape
+			A4 Portrait
+			Letter ANSI A Landscape
+			Letter ANSI A Portrait
+			Tabloid ANSI B Landscape
+			Tabloid ANSI B Portrait
+			*/
+			function CreatePrintBtn()
+			{
+				printUrl = "http://sampleserver6.arcgisonline.com/arcgis/rest/services/Utilities/PrintingTools/GPServer/Export%20Web%20Map%20Task";
+
+				var printTask = new PrintTask(printUrl);
+
+				var params = new PrintParameters();
+				params.map = map;
+				
+				var printTemp=new PrintTemplate();
+				
+				myDialog = new Dialog({
+					title: "Printing",
+					content: "printing,please wait while it's processing",
+					style: "width: 300px;overflow-y:scroll;overflow-wrap: break-word;"
+				}); 
+				
+				
+				var n = domConstruct.create("div", {id:"printBtn"},"toolbar");	
+				
+				var menu = new DropDownMenu({ style: "display: none;"});
+				var menuItem1 = new MenuItem({
+					id:"menu1",
+					label: "MAP_ONLY",
+					//iconClass:"dijitEditorIcon dijitEditorIconSave",
+					onClick: function(){ 
+					
+					printTemp.layout=this.label;
+					//alert("printing,please wait while it's processing");
+					//this.set('label', "printing");
+					myDialog.set("content","printing,please wait while it's processing");
+					myDialog.show();
+					params.template = printTemp;
+					printTask.execute(params, printResult,printErr); 
+					}
+				});
+				menu.addChild(menuItem1);
+
+				var menuItem2 = new MenuItem({
+					id:"printA3Landscape",
+					label: "A3 Landscape",
+					//iconClass:"dijitEditorIcon dijitEditorIconCut",
+					onClick: function(){ 
+					
+					printTemp.layout=this.label;
+					//alert("printing,please wait while it's processing");
+					//this.set('label', "printing");
+					myDialog.set("content","printing,please wait while it's processing");
+					myDialog.show();
+					params.template = printTemp;
+					printTask.execute(params, printResult,printErr); 
+					}
+				});
+				menu.addChild(menuItem2);
+				
+				var menuItem3 = new MenuItem({
+					label: "A3 Portrait",
+					//iconClass:"dijitEditorIcon dijitEditorIconCut",
+					onClick: function(){ 
+					
+					printTemp.layout=this.label;
+					//alert("printing,please wait while it's processing");
+					//this.set('label', "printing");
+					myDialog.set("content","printing,please wait while it's processing");
+					myDialog.show();
+					params.template = printTemp;
+					printTask.execute(params, printResult,printErr); 
+					}
+				});
+				menu.addChild(menuItem3);
+				
+				var menuItem4 = new MenuItem({
+					label: "A4 Landscape",
+					//iconClass:"dijitEditorIcon dijitEditorIconCut",
+					onClick: function(){ 
+					
+					printTemp.layout=this.label;
+					//alert("printing,please wait while it's processing");
+					//this.set('label', "printing");
+					myDialog.set("content","printing,please wait while it's processing");
+					myDialog.show();
+					params.template = printTemp;
+					printTask.execute(params, printResult,printErr); 
+					}
+				});
+				menu.addChild(menuItem4);
+				
+				var menuItem5 = new MenuItem({
+					label: "A4 Portrait",
+					//iconClass:"dijitEditorIcon dijitEditorIconCut",
+					onClick: function(){ 
+					
+					printTemp.layout=this.label;
+					//alert("printing,please wait while it's processing");
+					//this.set('label', "printing");
+					myDialog.set("content","printing,please wait while it's processing");
+					myDialog.show();
+					params.template = printTemp;
+					printTask.execute(params, printResult,printErr); 
+					}
+				});
+				menu.addChild(menuItem5);
+				
+				var menuItem6 = new MenuItem({
+					label: "Letter ANSI A Landscape",
+					//iconClass:"dijitEditorIcon dijitEditorIconCut",
+					onClick: function(){ 
+					
+					printTemp.layout=this.label;
+					//alert("printing,please wait while it's processing");
+					//this.set('label', "printing");
+					myDialog.set("content","printing,please wait while it's processing");
+					myDialog.show();
+					params.template = printTemp;
+					printTask.execute(params, printResult,printErr); 
+					}
+				});
+				menu.addChild(menuItem6);
+				
+				var menuItem7 = new MenuItem({
+					label: "Letter ANSI A Portrait",
+					//iconClass:"dijitEditorIcon dijitEditorIconCut",
+					onClick: function(){ 
+					
+					printTemp.layout=this.label;
+					//alert("printing,please wait while it's processing");
+					//this.set('label', "printing");
+					myDialog.set("content","printing,please wait while it's processing");
+					myDialog.show();
+					params.template = printTemp;
+					printTask.execute(params, printResult,printErr); 
+					}
+				});
+				menu.addChild(menuItem7);
+				
+				var menuItem8 = new MenuItem({
+					label: "Tabloid ANSI B Landscape",
+					//iconClass:"dijitEditorIcon dijitEditorIconCut",
+					onClick: function(){ 
+					
+					printTemp.layout=this.label;
+					//alert("printing,please wait while it's processing");
+					//this.set('label', "printing");
+					myDialog.set("content","printing,please wait while it's processing");
+					myDialog.show();
+					params.template = printTemp;
+					printTask.execute(params, printResult,printErr); 
+					}
+				});
+				menu.addChild(menuItem8);
+				
+				var menuItem9 = new MenuItem({
+					label: "Tabloid ANSI B Portrait",
+					//iconClass:"dijitEditorIcon dijitEditorIconCut",
+					onClick: function(){ 
+					
+					printTemp.layout=this.label;
+					//alert("printing,please wait while it's processing");
+					//this.set('label', "printing");
+					myDialog.set("content","printing,please wait while it's processing");
+					myDialog.show();
+					params.template = printTemp;
+					printTask.execute(params, printResult,printErr); 
+					}
+				});
+				menu.addChild(menuItem9);
+
+				var button = new DropDownButton({
+					label: "print map document",
+					iconClass:'printIcon',
+					showLabel:false,
+					dropDown: menu,
+					onClick: function(){
+						// Do something:
+						console.log("button clicked")
+					}
+				}, n);
+				
+				//yy 0418
+				//var url ='http://servicesbeta4.esri.com/arcgis/rest/services/Utilities/ExportWebMap/GPServer/Export Web Map Task';
+				
+				
+				
+				//this.printer=new Print({
+				//	map:map,
+				//	url:printUrl
+				//},domConstruct.create('div'));
+				
+				//dom.byId('toolbar').appendChild(this.printer.printDomNode);
+				
+				//this.printer.startup();
+				
+				
+			}
+			
+			function completeCallback(jobInfo) {
+				console.log("getting data");
+				
+				(jobInfo.jobId, "Viewshed_Result", displayResult);
+			}
+			
+			function statusCallback(jobInfo) {
+				console.log(jobInfo.jobStatus);
+			}
+			
+			function printResult(result){
+				var time = new Date();
+				var url = result.url + '?time=' + time;
+				//myDialog.destroy();
+				myDialog.set("content", "Printing job finished at " + new Date() + "!"+"\n Please go to the output url:"+result.url);
+				console.log('The url to the print image is : ' + url);
+				window.open(result.url);
+			}
+			
+			function printErr(result){
+				//var time = new Date();
+				//var url = result.url + '?time=' + time;
+				myDialog.set("content", "Error happened at " + new Date() + "!"+"\n"+result.message);
+				//console.log(result.error);
+				//window.open(result.url);
+			}
+			
+			function CreateDrawBtn()
+			{
+				//<button data-dojo-type="dijit/form/Button">Point</button>
+				//<button data-dojo-type="dijit/form/Button">Multi Point</button>
+				//<button data-dojo-type="dijit/form/Button">Line</button>
+				//<button data-dojo-type="dijit/form/Button">Polyline</button>
+				//<button data-dojo-type="dijit/form/Button">Polygon</button>
+				//<button data-dojo-type="dijit/form/Button">Freehand Polyline</button>
+				//<button data-dojo-type="dijit/form/Button">Freehand Polygon</button>
+				
+				var n = domConstruct.create("div", {id:"DrawBtn"},"toolbar");	
+				
+				var menu = new DropDownMenu({ style: "display: none;"});
+				var menuItem1 = new MenuItem({
+					label: "Point",
+					//iconClass:"dijitEditorIcon dijitEditorIconSave",
+					onClick: function(){activiateDrawTool(this.label);}
+				});
+				menu.addChild(menuItem1);
+
+				var menuItem2 = new MenuItem({
+					label: "Multi Point",
+					//iconClass:"dijitEditorIcon dijitEditorIconCut",
+					onClick: function(){activiateDrawTool(this.label);}
+				});
+				menu.addChild(menuItem2);
+				
+				var menuItem3 = new MenuItem({
+					label: "Line",
+					//iconClass:"dijitEditorIcon dijitEditorIconCut",
+					onClick: function(){activiateDrawTool(this.label);}
+				});
+				menu.addChild(menuItem3);
+				
+				var menuItem4 = new MenuItem({
+					label: "Polyline",
+					//iconClass:"dijitEditorIcon dijitEditorIconCut",
+					onClick: function(){activiateDrawTool(this.label);}
+				});
+				menu.addChild(menuItem4);
+				
+				var menuItem5 = new MenuItem({
+					label: "Polygon",
+					//iconClass:"dijitEditorIcon dijitEditorIconCut",
+					onClick: function(){activiateDrawTool(this.label);}
+				});
+				menu.addChild(menuItem5);
+				
+				var menuItem6 = new MenuItem({
+					label: "Freehand Polyline",
+					//iconClass:"dijitEditorIcon dijitEditorIconCut",
+					onClick: function(){activiateDrawTool("Freehand_Polyline");}
+				});
+				menu.addChild(menuItem6);
+				
+				var menuItem7 = new MenuItem({
+					label: "Freehand Polygon",
+					//iconClass:"dijitEditorIcon dijitEditorIconCut",
+					onClick: function(){activiateDrawTool("Freehand_Polygon");}
+				});
+				menu.addChild(menuItem7);
+
+				var button = new DropDownButton({
+					label: "draw graphics",
+					iconClass:'drawIcon',
+					showLabel:false,
+					dropDown: menu,
+					onClick: function(){
+						// Do something:
+						console.log("button clicked")
+					}
+				}, n);
+				
+				//yy 0417
+				
+				
+			}
+			
+			function activiateDrawTool(toolname)
+			{
+				drawtoolbar.activate(Draw[toolname.toUpperCase()]);
+			}
+			
+			function _CreateDrawToolbar(map) {
+			  drawtoolbar = new Draw(map);
+			  drawtoolbar.on("draw-end", addToMap);
+			}
+			
+			function addToMap(evt) {
+			  var symbol;
+			  drawtoolbar.deactivate();
+			  map.showZoomSlider();
+			  switch (evt.geometry.type) {
+				case "point":
+				case "multipoint":
+				  symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.STYLE_SQUARE, 10,
+					new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
+					new Color([255,0,0]), 1),
+					new Color([0,255,0,0.25]));
+
+				  break;
+				case "polyline":
+				  symbol = new SimpleLineSymbol();
+				  break;
+				default:
+				  symbol = new SimpleFillSymbol();
+				  break;
+			  }
+			  var graphic = new Graphic(evt.geometry, symbol);
+			  map.graphics.add(graphic);
+			}
+
+			function SearchBtn(){
+				findTask = new FindTask("http://mapservices.ap.buffalo.edu/arcgis/rest/services/ErNg_2010CensusIndicatorsbyTract/MapServer/");
+
+				//create find parameters and define known values
+				findParams = new esri.tasks.FindParameters();
+				findParams.returnGeometry = true;
+				findParams.layerIds = [0, 1, 2];
+				findParams.searchFields = ["CITY_NAME", "NAME", "SYSTEM", "STATE_ABBR", "STATE_NAME"];
+			}
+
+			function execute(searchText) {
+				//set the search text to find parameters
+				findParams.searchText = searchText;
+				findTask.execute(findParams, showResults);
+			}
+
+			function showResults(results) {
+				//symbology for graphics
+				var markerSymbol = new esri.symbol.SimpleMarkerSymbol(esri.symbol.SimpleMarkerSymbol.STYLE_SQUARE, 10, new esri.symbol.SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_SOLID, new dojo.Color([255, 0, 0]), 1), new dojo.Color([0, 255, 0, 0.25]));
+				var lineSymbol = new esri.symbol.SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_DASH, new dojo.Color([255, 0, 0]), 1);
+				var polygonSymbol = new esri.symbol.SimpleFillSymbol(esri.symbol.SimpleFillSymbol.STYLE_NONE, new esri.symbol.SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_DASHDOT, new dojo.Color([255, 0, 0]), 2), new dojo.Color([255, 255, 0, 0.25]));
+
+				//find results return an array of findResult.
+				map.graphics.clear();
+				var dataForGrid = [];
+				//Build an array of attribute information and add each found graphic to the map
+				dojo.forEach(results, function(result) {
+				  var graphic = result.feature;
+				  dataForGrid.push([result.layerName, result.foundFieldName, result.value]);
+				  switch (graphic.geometry.type) {
+				  case "point":
+					graphic.setSymbol(markerSymbol);
+					break;
+				  case "polyline":
+					graphic.setSymbol(lineSymbol);
+					break;
+				  case "polygon":
+					graphic.setSymbol(polygonSymbol);
+					break;
+				  }
+				  map.graphics.add(graphic);
+				});
+				var data = {
+				  items: dataForGrid
+				};
+				var store = new dojo.data.ItemFileReadStore({
+				  data: data
+				});
+				grid.setStore(store);
+			}
+		
+		
+		//**************************************************************
+		//start toc function
+		function addToTOC(layer,listLayers)
+		{
+			if(listLayers)
+			{
+				if (layer.loaded) {
+					buildLayerList(layer);
+				}
+				else {
+					on(layer, "onLoad", buildLayerList);
+				}
+			}
+			else
+			{
+				if (layer.loaded) {
+					buildLayerListRoot(layer);
+				}
+				else {
+					on(layer, "onLoad", buildLayerListRoot);
+				}
+			}
+		}
+
+		function buildLayerListRoot(layer)
+		{
+			addToTransparencyList(layer);
+			var currentLayer = layer;
+			var checkbtn=query("TOC_RootCHECKED");
+			
+			tocHTML = "<img src='images/blank.bmp'><input type='checkbox' data-dojo-type='dijit/form/CheckBox' class='TOC_Root' " + (currentLayer.visible ? " CHECKED " : "") + " id='" + currentLayer.id + "' /><label for='" + currentLayer.id + "'>" + currentLayer.id + "</label><br>" + tocHTML;
+			//tocHTML = "<input id='" + currentLayer.id + "' dojotype='dijit.form.CheckBox' class='TOC_Root' name='developer' " + (currentLayer.visible ? " CHECKED " : "") + " value='on' type='checkbox' onclick=\"toggleService('" + currentLayer.id + "');\" /><label for='" + currentLayer.id + "'>" + currentLayer.id + "</label>"  + tocHTML; 
+			dom.byId("toc").innerHTML = tocHTML;
+			domAttr.set("toc","style","overflow:none;max-height:none;");
+			//on(dom.byId("'"+currentLayer.id+"'"),"click",toggleService(currentLayer.id));
+		}
+
+		function toggleLayer(id)
+		{
+			var layerDiv = dojo.byId(id+'Layers');
+			var icon = dojo.byId(id+'Icon');
+			if(layerDiv.style.display == 'block')
+			{
+				icon.src = "images/expand.bmp";
+				layerDiv.style.display = 'none';
+			}
+			else
+			{
+				icon.src = "images/close.bmp";
+				layerDiv.style.display = 'block';
+			}
+
+		}
+
+		function zoomToLayer(id)
+		{
+			var layer = map.getLayer(id);
+			if(layer != null)
+			{
+				map.setExtent(layer.fullExtent);
+			}
+		}
+
+		function buildLayerList(layer) {
+			
+			addToTransparencyList(layer);
+			var currentLayer = layer;
+			var currentHTML = "";
+			currentHTML += "<img src='images/expand.bmp' id='" + currentLayer.id + "Icon' onclick=\"toggleLayer('" + currentLayer.id + "')\" ><input type='checkbox' data-dojo-type='dijit/form/CheckBox' class='TOC_Root' " + (currentLayer.visible ? " CHECKED " : "") + " id='" + currentLayer.id + "' onclick=\"toggleService('" + currentLayer.id + "');\" /><label for='" + currentLayer.id + "'>" + currentLayer.id + "</label><br>";
+			var subLayers = currentLayer.layerInfos;
+			currentHTML += "<div id='" + currentLayer.id + "Layers' style='display:none;'>";
+			for (var i=0; i<subLayers.length; i++)
+			{
+			  var currentSubLayer = subLayers[i];
+			  if (currentSubLayer.defaultVisibility) {
+				visible.push(currentSubLayer.id);
+			  }
+			  currentHTML += "<img src='images/blank.bmp'><img src='images/blank.bmp'><input type='checkbox' class='" + currentLayer.id + "TOC' " + (currentSubLayer.defaultVisibility ? " CHECKED " : "") + " id='" + currentSubLayer.id + "' onclick=\"updateLayerVisibility('" + currentLayer.id + "','" + currentSubLayer.id + "');\" /><label for='" + currentSubLayer.id + "'>" + currentSubLayer.name + "</label><br>";
+			}
+			currentHTML += "</table></div>";
+			
+			tocHTML = currentHTML + tocHTML;
+			
+			dojo.byId("toc").innerHTML = tocHTML;
+			domAttr.set("toc","style","overflow:none;max-height:none;");
+		}
+
+
+
+		function updateLayerVisibility(serviceID,layerid) {
+			var inputs = dojo.query("."+serviceID+"TOC"), input;
+			visible = [];
+			for (var i=0, il=inputs.length; i<il; i++) {
+			if (inputs[i].checked) {
+			visible.push(inputs[i].id);
+			}
+			}
+			
+			var layer = map.getLayer(serviceID);
+			layer.setVisibleLayers(visible);
+		}
+
+		function toggleService(layerID)
+		{
+			var layer = map.getLayer(layerID);
+			if(layer.visible)
+			{
+				layer.hide();
+			}
+			else
+			{
+				layer.show();
+			}
+		}
+		//END TOC FUNCTIONS
+		//**************************************************************
+
+
+		//**************************************************************
+		//Transparency FUNCTIONS
+
+		function addToTransparencyList(layer)
+		{
+			var selectObject = dom.byId("transparencyLayerSelect");	
+			var optionObject = new Option(layer.id,layer.id);
+			selectObject.options[selectObject.options.length]=optionObject;
+			
+			var list = new Array();
+			for(var i= 0; i < selectObject.options.length;i++)
+			{
+				list.push(selectObject.options[i].value);
+			}
+			
+			selectObject.options.length = 0;
+			list.sort();
+			for(var j= 0; j < list.length;j++)
+			{
+				var optionObject = new Option(list[j],list[j]);
+				selectObject.options[selectObject.options.length]=optionObject;
+			}
+		}
+
+		function updateTransparencyLayer(layerId)
+		{
+			transparencyLayerID = layerId;
+			var layer = map.getLayer(transparencyLayerID);
+			if(layer != null)
+			{
+				dijit.byId('slider').setValue(layer.opacity * 100);
+			}
+		}
+
+		function changeTransparency(value)
+		{
+			
+			var layer = map.getLayer(transparencyLayerID);
+			if(layer != null)
+			{
+				layer.setOpacity(value);
+			}
+		}
+		//END Transparency FUNCTIONS
+		//**************************************************************
+		
+		});
+		
+		
+			
+    </script>   
+	
+</head>
+<body class="claro">
+	<div id="loadingOverlay" class="loadingOverlay pageOverlay">
+			<div class="loadingMessage">Loading...</div>
+	</div>
+	<script type="text/javascript">
+		var demo;
+		require(["dojo/_base/declare", "dojo/dom", "dojo/dom-style","dojo/_base/fx"],
+		function(declare, dom, domStyle,fx){
+			var Demo = declare(null, {
+				overlayNode: null,
+				constructor: function(){
+					// save a reference to the overlay
+					this.overlayNode = dom.byId('loadingOverlay');
+				},
+				// called to hide the loading overlay
+				endLoading: function(){
+					fx.fadeOut({
+						node: this.overlayNode,
+						duration: 1000,
+						onEnd: function(node){
+							domStyle.set(node, 'display', 'none');
+						}
+					}).play();
+				}
+			});
+			demo = new Demo();
+		});
+	</script>
+	
+   <!--The ArcGIS API for JavaScript provides bidirectional support.  When viewing the application in an right to left (rtl) language like Hebrew and Arabic the map needs to remain in left-to-right (ltr) mode. Specify this by setting the dir attribute on the div to ltr. --> 
+   <div id="mainWindow" data-dojo-type="dijit/layout/LayoutContainer" data-dojo-props="design:'headline',gutters:false">
+    <div id="mapDiv" data-dojo-type="dijit/layout/ContentPane" data-dojo-props="region:'center'" dir="ltr">
+		<!-- yy 0416 geocoder-->
+		<div id="geocoderDiv"></div>
+		<!-- yy 0413 toolbar -->
+		<div id="toolbar" data-dojo-type="dijit/Toolbar">
+			
+		</div>
+		
+		<div id="layerListFloatingPane" >
+			<span style="font-size:11px; font-family:Arial, Helvetica, sans-serif; ">
+			<div id="toc" style="overflow-y: hidden; overflow-x: hidden; max-width:300px;max-height:none;overflow:hidden; width:90%; filter:alpha(opacity=90);-moz-opacity: 0.9; opacity: 0.9; background-color: white; overflow:auto; max-height:400px;" align="left"></div>
+			<br>
+			
+			Active Layer:
+			<select id="transparencyLayerSelect" name="transparencyList" id="transparencyList" >
+			<option value="" selected></option>
+			</select>
+			&nbsp;<br>
+			<br>
+			<button id="zoomBtn" type="button" value="Zoom To Layer" style="font-family:Arial, Helvetica, sans-serif; font-size:10px;"></button>
+			<br>
+			<br>
+			Change Layer Transparency:<br>
+			<div id="slider"></div>
+		</div>
+		
+
+	</div>
+   </div>
+
+
+
+    
+</body>
+</html>

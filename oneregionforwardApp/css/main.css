@@ -1,0 +1,216 @@
+html,body {
+height:100%;
+width:100%;
+margin:0;
+padding:0;
+}
+body{
+overflow:hidden;
+font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; 
+font-weight: 300;
+}
+
+.pageOverlay {
+    top: 0%;
+    left: 0%;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+	#margin-top:100px;
+	#margin-left:100px;
+    z-index: 1001;
+    display: block;
+}
+
+#loadingOverlay {
+    background:  #fff url("http://ajax.googleapis.com/ajax/libs/dojo/1.9.2/dijit/themes/claro/images/loadingAnimation.gif") no-repeat 10px 23px;
+}
+
+.loadingMessage {
+    padding: 25px 40px;
+    color: #999;
+}
+
+#logoDiv{
+position:absolute;
+display:block;
+z-index:999;
+bottom:80px;
+left:25px;
+width:50px;
+height:20px;
+}
+
+#toolbar{
+position:absolute;
+display:block;
+float:left;
+z-index:999;
+top:20px;
+right:25px;
+background-color: transparent;
+width:400px;
+max-width:460px;
+}
+
+#mainWindow{
+width:100%;
+height:100%;
+}
+#mapDiv {
+border-radius: 4px;
+padding:0;
+margin:10px 10px 10px 10px;
+}
+.header{
+max-height:130px;
+overflow: hidden;
+margin:0 0 10px 0;
+}
+.footer{
+margin:0;
+font-size:1em;
+height:30px;
+margin: 10px 15px 5px;
+text-align: right;
+}
+.esriRTL .footer{
+text-align: left;
+}
+#title{
+font-size:1.5em;
+font-weight:600;
+padding-top: 10px;
+text-align: left;
+padding-left:10px;
+
+}
+#subtitle{
+font-size:1em;
+padding-left:10px;
+}
+.esriRTL #title{
+text-align: right;
+padding-right:10px;
+}
+.esriRTL #subtitle{
+padding-right:10px;
+}
+
+#descriptionPane, #legendPane{
+width: 15%;
+border-radius: 4px;
+margin: 10px;
+}
+
+.panel_content{
+padding: 10px !important;
+overflow-x:hidden;
+overflow-y:auto;
+
+}
+.esriSimpleSliderDecrementButton:hover {
+border-top: 1px solid #666;
+}
+.HomeButton .home{
+background-image: url(../images/home.png);
+padding:0;
+border-radius: 0;
+border-bottom: 1px solid #666;
+background-color:#FFF;
+}
+.HomeButton .home:hover {
+background-color:#eee;
+background-color: rgb(238, 238, 238);
+}
+
+.HomeButton .home:active {
+background-color:#ddd;
+}
+#locateDiv{
+position: absolute;
+top:125px;
+left:20px;
+z-index: 50;
+}
+.LocateButton .zoomLocateButton {
+background-color: #989898;
+}
+#basemapDiv{
+position: absolute;
+z-index: 50;
+top:20px;
+right:20px;
+}
+
+#geocoderDiv{
+position:absolute;
+display:block;
+z-index:50;
+top:20px;
+left:70px;
+}
+
+#layerListFloatingPane
+{
+	position:absolute;
+	display:block;
+	z-index:1000;
+	top:100;
+	right:360;
+	background-color:#ffffff;
+}
+
+#legendPane
+{
+background: rgba(219,225,230,1) 40%;
+}
+
+/*icons*/
+    .basemapIcon {
+        /*background: url("../icon/Basemap16.png");
+        width: 16px;
+        height: 16px;*/
+		background:url("../image/i_globe.png");
+    	width:34px;
+    	height:34px;
+    }
+	
+    .bookmarkIcon {
+        /*background: url("../icon/bookmarks.png");
+        width: 16px;
+        height: 16px;*/
+		background:url("../image/i_bookmark.png");
+    	width:40px;
+    	height:40px;
+    }
+	
+	.printIcon{
+    	/*background:url("../icon/print.bmp");
+    	width:16px;
+    	height:16px;*/
+		background:url("../image/i_print.png");
+    	width:40px;
+    	height:40px;
+    }
+	
+	.drawIcon{
+		/*background:url("../icon/023.ico");
+		width:16px;
+		height:16px;*/
+		background:url("../image/i_draw2.png");
+    	width:40px;
+    	height:40px;
+	}
+	
+	.layerIcon{
+		/*background:url("../icon/6.bmp");
+		width:16px;
+		height:16px;*/
+		background:url("../image/i_layers.png");
+    	width:40px;
+    	height:40px;
+	}
+	
+	
+
